@@ -1,6 +1,6 @@
 # adhd-hermes
 
-ADHD executive function assistant appliance — a CentOS Stream 10 bootc image that
+ADHD executive function assistant appliance — a Fedora 43 bootc image that
 runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) via rootless
 Podman Quadlets on bare metal (ThinkCentre M910q).
 
@@ -24,7 +24,7 @@ the OS layer that hosts them.
 ```
 ┌──────────────────────────────────────────────┐
 │              adhd-hermes-os (bootc)          │
-│  CentOS Stream 10 + Podman + Flatpak + Ansible│
+│  Fedora 43 + Podman + Flatpak + Ansible│
 │                                              │
 │  ┌─────────────────────┐ ┌────────────────┐ │
 │  │ adhd-hermes-gateway  │ │ adhd-hermes-   │ │

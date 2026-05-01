@@ -8,14 +8,14 @@
 
 ## Project Identity
 
-**What this is:** `adhd-hermes` — a CentOS Stream 10 bootc appliance image that
+**What this is:** `adhd-hermes` — a Fedora 43 bootc appliance image that
 runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) via rootless
 Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machine.
 
 **Owner:** distantgeek
 **Primary registry:** `ghcr.io/distantgeek/adhd-hermes-os`
 **Upstream agent:** `docker.io/nousresearch/hermes-agent`
-**Target runtime:** ThinkCentre M910q (i5, 8GB RAM, bare metal bootc), homelab (`distantgeek.net`)
+**Target runtime:** ThinkCentre M910q (i5-7500T, 8GB RAM, bare metal), homelab (`distantgeek.net`)
 **License:** Apache 2.0 (OS image); Hermes Agent is MIT
 
 **Related active projects (all private repos):**
@@ -72,7 +72,7 @@ When Claude Code first opens this project, complete these steps before any other
 | Proxmox host | Primary hypervisor | Proxmox VE | Hosts devbox VM and other VMs |
 | TrueNAS | NAS + Docker stacks | TrueNAS Scale | Dockge, NPM, Arr stack, Jellyfin |
 | Fedora Server | SOC stack | Fedora Server 43 | soc-deploy |
-| ThinkCentre | ADHD assistant | CentOS Stream 10 (bootc) | **adhd-hermes target** |
+| ThinkCentre | ADHD assistant | Fedora 43 (bootc) | **adhd-hermes target** |
 | FX-8 / GTX 1060 6GB | Auxiliary inference | Fedora | faster-whisper STT |
 | Aurora-nvidia | Daily driver desktop | Aurora (Universal Blue) | NVIDIA GPU |
 | Laptop | Mobile dev | (varies) | SSH client |

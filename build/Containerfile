@@ -1,10 +1,10 @@
-FROM quay.io/centos-bootc/centos-bootc:stream10
+FROM quay.io/fedora/fedora-bootc:43
 
 # ---------------------------------------------------------------------------
 # Labels
 # ---------------------------------------------------------------------------
 LABEL org.opencontainers.image.title="adhd-hermes-os"
-LABEL org.opencontainers.image.description="CentOS Stream 10 bootc appliance for Hermes Agent — Podman/Quadlets/SELinux"
+LABEL org.opencontainers.image.description="Fedora 43 bootc appliance for Hermes Agent — Podman/Quadlets/SELinux"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ RUN systemctl enable qemu-guest-agent \
 # ---------------------------------------------------------------------------
 RUN mkdir -p /usr/lib/bootc/install && \
     printf '[install.filesystem.root]\ntype = "xfs"\n' \
-    > /usr/lib/bootc/install/10-adhd-hermes.toml
+    > /usr/lib/bootc/install/10-fedora-adhd-hermes.toml
 
 # ---------------------------------------------------------------------------
 # Firewalld service definition for Hermes dashboard
