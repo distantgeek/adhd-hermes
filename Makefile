@@ -136,6 +136,6 @@ build-disk-image:
 		--local \
 		$(FULL_IMAGE)
 	@echo ">>> Raw disk image at output/image/disk.raw"
-	@echo ">>> Import to Proxmox:"
-	@echo "    scp output/image/disk.root root@<proxmox>:/tmp/"
-	@echo "    ssh root@<proxmox> qm disk import <vmid> /tmp/disk.raw <storage-pool> --format raw"
+	@echo ">>> Write to bare metal disk:"
+	@echo "    sudo dd if=output/image/disk.raw of=/dev/sdX bs=4M status=progress"
+	@echo "    Or: sudo bootc install to-disk --image $(FULL_IMAGE) /dev/sdX"

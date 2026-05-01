@@ -10,12 +10,12 @@
 
 **What this is:** `adhd-hermes` — a CentOS Stream 10 bootc appliance image that
 runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) via rootless
-Podman Quadlets. Designed for deployment on a ThinkCentre in a Proxmox homelab.
+Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machine.
 
 **Owner:** distantgeek
 **Primary registry:** `ghcr.io/distantgeek/adhd-hermes-os`
 **Upstream agent:** `docker.io/nousresearch/hermes-agent`
-**Target runtime:** ThinkCentre (Proxmox VM), homelab (`distantgeek.net`)
+**Target runtime:** ThinkCentre M910q (i5, 8GB RAM, bare metal bootc), homelab (`distantgeek.net`)
 **License:** Apache 2.0 (OS image); Hermes Agent is MIT
 
 **Related active projects (all private repos):**
@@ -33,19 +33,18 @@ Podman Quadlets. Designed for deployment on a ThinkCentre in a Proxmox homelab.
 
 ---
 
-## Deployed VM — Current State
+## Deployed System — Current State
 
 | Property | Value |
 |----------|-------|
-| VMID | TBD (ThinkCentre on Proxmox) |
+| Hardware | ThinkCentre M910q (i5-7500T, 8GB RAM, bare metal) |
 | Hostname | `adhd-hermes` |
 | IP | TBD (DHCP reservation planned) |
-| Proxmox host | `kevbot-pve` at `192.168.2.146` |
 | SSH user | `kevbot` |
 | bootc image | `ghcr.io/distantgeek/adhd-hermes-os:latest` |
 | Previous image | `ghcr.io/distantgeek/adhd-claw-os:latest` (switched via `bootc switch`) |
 | Container runtime | Rootless Podman via systemd Quadlets |
-| Status | Pending deployment |
+| Status | Pending deployment — bare metal, not a VM |
 
 ---
 
@@ -70,7 +69,7 @@ When Claude Code first opens this project, complete these steps before any other
 
 | System | Role | OS | Notes |
 |--------|------|----|-------|
-| Proxmox host | Primary hypervisor | Proxmox VE | Hosts this VM |
+| Proxmox host | Primary hypervisor | Proxmox VE | Hosts devbox VM and other VMs |
 | TrueNAS | NAS + Docker stacks | TrueNAS Scale | Dockge, NPM, Arr stack, Jellyfin |
 | Fedora Server | SOC stack | Fedora Server 43 | soc-deploy |
 | ThinkCentre | ADHD assistant | CentOS Stream 10 (bootc) | **adhd-hermes target** |
@@ -261,8 +260,8 @@ volume mount if SELinux blocking occurs. The current Quadlets use the default
 |--------|-------------|
 | `make build-image [HERMES_USER=name]` | Build bootc image; defaults to `kevbot` user |
 | `make push-image` | Push to GHCR |
-| `make build-disk-image` | Convert to raw disk via bootc-image-builder for Proxmox |
-| `make deploy VM_HOST=<ip>` | Ansible configure.yml against running VM |
+| `make build-disk-image` | Convert to raw disk via bootc-image-builder for bare metal |
+| `make deploy VM_HOST=<ip>` | Ansible configure.yml against target system |
 | `make upgrade VM_HOST=<ip>` | `bootc upgrade` + reboot on target |
 | `make rollback VM_HOST=<ip>` | `bootc rollback` + reboot on target |
 | `make configure VM_HOST=<ip>` | Deploy Quadlets and configure services |

@@ -2,7 +2,7 @@
 
 ADHD executive function assistant appliance — a CentOS Stream 10 bootc image that
 runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) via rootless
-Podman Quadlets on Proxmox.
+Podman Quadlets on bare metal (ThinkCentre M910q).
 
 ## What This Is
 
