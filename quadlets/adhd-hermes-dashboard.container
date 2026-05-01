@@ -1,0 +1,21 @@
+[Unit]
+Description=ADHD-Hermes Dashboard (Web UI)
+After=adhd-hermes-gateway.service
+Wants=adhd-hermes-gateway.service
+
+[Container]
+Image=docker.io/nousresearch/hermes-agent:latest
+ContainerName=adhd-hermes-dashboard
+Network=host
+Volume=%h/.hermes:/opt/data
+Environment=HERMES_UID=%u
+Environment=HERMES_GID=%g
+Exec=dashboard --host 0.0.0.0 --no-open
+LogDriver=journald
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

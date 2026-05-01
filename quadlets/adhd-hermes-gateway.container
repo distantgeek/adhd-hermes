@@ -1,0 +1,20 @@
+[Unit]
+Description=ADHD-Hermes Gateway (Messaging + Cron)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/nousresearch/hermes-agent:latest
+ContainerName=adhd-hermes-gateway
+Network=host
+Volume=%h/.hermes:/opt/data
+Environment=HERMES_UID=%u
+Environment=HERMES_GID=%g
+LogDriver=journald
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

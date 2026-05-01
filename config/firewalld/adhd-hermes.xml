@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>ADHD-Hermes</short>
+  <description>Hermes Agent Dashboard — HTTPS access should be via NPM reverse proxy</description>
+  <port protocol="tcp" port="9119"/>
+</service>

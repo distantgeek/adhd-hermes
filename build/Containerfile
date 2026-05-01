@@ -1,0 +1,121 @@
+FROM quay.io/centos-bootc/centos-bootc:stream10
+
+# ---------------------------------------------------------------------------
+# Labels
+# ---------------------------------------------------------------------------
+LABEL org.opencontainers.image.title="adhd-hermes-os"
+LABEL org.opencontainers.image.description="CentOS Stream 10 bootc appliance for Hermes Agent — Podman/Quadlets/SELinux"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+
+# ---------------------------------------------------------------------------
+# System packages
+# ---------------------------------------------------------------------------
+RUN dnf install -y \
+    git \
+    curl \
+    wget \
+    unzip \
+    tmux \
+    jq \
+    yq \
+    make \
+    gcc \
+    openssl-devel \
+    podman \
+    buildah \
+    skopeo \
+    python3 \
+    python3-pip \
+    python3-libselinux \
+    ansible-core \
+    qemu-guest-agent \
+    firewalld \
+    flatpak \
+    tree \
+    htop \
+    ripgrep \
+    fd-find \
+    bat \
+    && dnf clean all
+
+# ---------------------------------------------------------------------------
+# Enable system services in the image
+# ---------------------------------------------------------------------------
+RUN systemctl enable qemu-guest-agent \
+    && systemctl enable firewalld \
+    && systemctl enable podman.socket
+
+# ---------------------------------------------------------------------------
+# bootc install configuration — explicitly declare root filesystem type.
+# Required by bootc-image-builder; do not rely on base image to provide it.
+# ---------------------------------------------------------------------------
+RUN mkdir -p /usr/lib/bootc/install && \
+    printf '[install.filesystem.root]\ntype = "xfs"\n' \
+    > /usr/lib/bootc/install/10-adhd-hermes.toml
+
+# ---------------------------------------------------------------------------
+# Firewalld service definition for Hermes dashboard
+# ---------------------------------------------------------------------------
+COPY config/firewalld/adhd-hermes.xml /usr/lib/firewalld/services/adhd-hermes.xml
+
+# ---------------------------------------------------------------------------
+# Rootless Podman config skeleton
+# ---------------------------------------------------------------------------
+RUN mkdir -p /etc/skel/.config/containers
+COPY config/containers/ /etc/skel/.config/containers/
+
+# ---------------------------------------------------------------------------
+# Quadlets — deployed to skel so they propagate to new user home directories
+# ---------------------------------------------------------------------------
+RUN mkdir -p /etc/skel/.config/containers/systemd
+COPY quadlets/adhd-hermes-gateway.container /etc/skel/.config/containers/systemd/adhd-hermes-gateway.container
+COPY quadlets/adhd-hermes-dashboard.container /etc/skel/.config/containers/systemd/adhd-hermes-dashboard.container
+
+# ---------------------------------------------------------------------------
+# Shell integrations for /etc/skel/.bashrc
+# ---------------------------------------------------------------------------
+RUN cat >> /etc/skel/.bashrc << 'EOF'
+
+# --- adhd-hermes shell integrations ---
+
+# Podman aliases (Docker-compatible muscle memory)
+alias docker='podman'
+alias docker-compose='podman-compose'
+
+# Quadlet helpers
+alias qdreload='systemctl --user daemon-reload'
+alias qdstart='systemctl --user start'
+alias qdstop='systemctl --user stop'
+alias qdstatus='systemctl --user status'
+alias qdlogs='journalctl --user -u'
+
+# adhd-hermes service helpers
+alias hermes-status='systemctl --user status adhd-hermes-gateway adhd-hermes-dashboard'
+alias hermes-start='systemctl --user start adhd-hermes-gateway adhd-hermes-dashboard'
+alias hermes-stop='systemctl --user stop adhd-hermes-gateway adhd-hermes-dashboard'
+alias hermes-logs='journalctl --user -u adhd-hermes-gateway -u adhd-hermes-dashboard'
+
+# Git shortcuts
+alias gs='git status'
+alias gd='git diff'
+alias gds='git diff --staged'
+
+# Safety aliases
+alias rm='rm -i'
+EOF
+
+# ---------------------------------------------------------------------------
+# Primary user — configurable at build time, defaults to "kevbot"
+# Override: podman build --build-arg HERMES_USER=yourname
+# SSH keys and personal config are applied post-deploy by Ansible.
+# Must run after all /etc/skel setup so useradd -m copies the full skel.
+# ---------------------------------------------------------------------------
+ARG HERMES_USER=kevbot
+RUN useradd -m -G wheel,podman -s /bin/bash ${HERMES_USER} \
+    && echo "${HERMES_USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${HERMES_USER} \
+    && chmod 440 /etc/sudoers.d/${HERMES_USER}
+
+# ---------------------------------------------------------------------------
+# Enable linger for the primary user so user services survive logout
+# ---------------------------------------------------------------------------
+RUN loginctl enable-linger ${HERMES_USER} || true

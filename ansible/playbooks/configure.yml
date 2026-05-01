@@ -1,0 +1,117 @@
+---
+# adhd-hermes post-deploy configuration
+# Usage: ansible-playbook configure.yml -i <host>, -u kevbot --private-key ~/.ssh/id_ed25519
+#
+# This playbook is run after a fresh bootc deploy or upgrade to configure
+# host-specific settings that are not baked into the image.
+
+- name: Configure adhd-hermes appliance
+  hosts: all
+  become: true
+  vars:
+    hermes_user: kevbot
+    lan_cidr: "192.168.0.0/16"
+
+  tasks:
+    - name: Ensure primary user exists
+      ansible.builtin.user:
+        name: "{{ hermes_user }}"
+        groups: wheel,podman
+        shell: /bin/bash
+      tags: [user]
+
+    - name: Enable linger for primary user
+      ansible.builtin.command:
+        cmd: loginctl enable-linger {{ hermes_user }}
+      changed_when: false
+      tags: [user]
+
+    - name: Ensure firewalld is running and enabled
+      ansible.builtin.systemd:
+        name: firewalld
+        state: started
+        enabled: true
+      tags: [firewall]
+
+    - name: Add adhd-hermes service to firewalld
+      ansible.posix.firewalld:
+        service: adhd-hermes
+        state: enabled
+        permanent: true
+        immediate: true
+      tags: [firewall]
+
+    - name: Restrict port 9119 to LAN only
+      ansible.posix.firewalld:
+        port: 9119/tcp
+        source: "{{ lan_cidr }}"
+        state: enabled
+        permanent: true
+        immediate: true
+      tags: [firewall]
+
+    - name: Reload firewalld
+      ansible.builtin.command:
+        cmd: firewall-cmd --reload
+      changed_when: false
+      tags: [firewall]
+
+    - name: Ensure Hermes data directory exists
+      ansible.builtin.file:
+        path: "/home/{{ hermes_user }}/.hermes"
+        state: directory
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0700"
+      tags: [hermes]
+
+    - name: Ensure Hermes subdirectories exist
+      ansible.builtin.file:
+        path: "/home/{{ hermes_user }}/.hermes/{{ item }}"
+        state: directory
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0755"
+      loop:
+        - cron
+        - sessions
+        - logs
+        - hooks
+        - memories
+        - skills
+        - skins
+        - plans
+        - workspace
+        - home
+      tags: [hermes]
+
+    - name: Reload user systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+        scope: user
+      become: false
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+      tags: [systemd]
+
+    - name: Ensure gateway service is enabled
+      ansible.builtin.systemd:
+        name: adhd-hermes-gateway
+        scope: user
+        enabled: true
+        state: started
+      become: false
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+      tags: [systemd, hermes]
+
+    - name: Ensure dashboard service is enabled
+      ansible.builtin.systemd:
+        name: adhd-hermes-dashboard
+        scope: user
+        enabled: true
+        state: started
+      become: false
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+      tags: [systemd, hermes]
