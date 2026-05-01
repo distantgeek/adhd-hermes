@@ -64,6 +64,20 @@
         daemon_reload: true
       tags: [cleanup]
 
+    # --- Fix gshadow duplicates from CentOS→Fedora bootc switch ---
+
+    - name: Fix duplicate utempter group in /etc/gshadow (bootc switch artifact)
+      ansible.builtin.command:
+        cmd: sed -i '/^utempter/d' /etc/gshadow
+      changed_when: false
+      tags: [cleanup]
+
+    - name: Reconcile system users after gshadow fix
+      ansible.builtin.command:
+        cmd: systemd-sysusers
+      changed_when: false
+      tags: [cleanup]
+
     # --- User setup ---
 
     - name: Ensure podman group exists

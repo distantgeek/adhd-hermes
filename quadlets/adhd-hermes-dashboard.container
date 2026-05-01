@@ -7,6 +7,10 @@ Wants=adhd-hermes-gateway.service
 Image=docker.io/nousresearch/hermes-agent:latest
 ContainerName=adhd-hermes-dashboard
 Network=host
+# NOTE: On bootc systems, use /var/home/<user> not /home/<user>.
+# The %h specifier resolves to /home/<user> which is wrong on bootc.
+# HERMES_UID/HERMES_GID must be numeric — %u/%g resolve to username strings.
+# --insecure is required for 0.0.0.0 bind; firewalld restricts to LAN only.
 Volume=/var/home/kevbot/.hermes:/opt/data:z
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000

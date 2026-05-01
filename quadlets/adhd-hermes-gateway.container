@@ -7,6 +7,9 @@ Wants=network-online.target
 Image=docker.io/nousresearch/hermes-agent:latest
 ContainerName=adhd-hermes-gateway
 Network=host
+# NOTE: On bootc systems, use /var/home/<user> not /home/<user>.
+# The %h specifier resolves to /home/<user> which is wrong on bootc.
+# HERMES_UID/HERMES_GID must be numeric — %u/%g resolve to username strings.
 Volume=/var/home/kevbot/.hermes:/opt/data:z
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000

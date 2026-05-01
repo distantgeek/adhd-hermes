@@ -43,7 +43,8 @@ RUN dnf install -y \
 # ---------------------------------------------------------------------------
 RUN systemctl enable qemu-guest-agent \
     && systemctl enable firewalld \
-    && systemctl enable podman.socket
+    && systemctl enable podman.socket \
+    && systemctl enable NetworkManager-wait-online.service
 
 # ---------------------------------------------------------------------------
 # bootc install configuration — explicitly declare root filesystem type.
