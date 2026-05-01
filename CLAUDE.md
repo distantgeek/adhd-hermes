@@ -48,7 +48,7 @@ Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machi
 | Container runtime | Rootless Podman via systemd Quadlets |
 | SELinux | Enforcing |
 | Pre-switch status | Old OpenClaw + Ollama containers stopped, disabled, and removed. Data cleared. |
-| Status | Ready for `bootc switch` from adhd-claw-os to adhd-hermes-os |
+| Status | Deployed — dashboard running, gateway needs `hermes setup` for API keys |
 
 ### ThinkCentre Hardware Notes
 
@@ -127,20 +127,24 @@ When Claude Code first opens this project, complete these steps before any other
 
 - **Image:** `docker.io/nousresearch/hermes-agent:latest`
 - **Network:** Host mode (required for Telegram, Discord, Signal gateways)
-- **Data:** `~/.hermes` → `/opt/data`
-- **Command:** `hermes gateway run` (default entrypoint)
+- **Data:** `/var/home/kevbot/.hermes` → `/opt/data` (bootc uses `/var/home/`, not `/home/`)
+- **Command:** `hermes gateway run --accept-hooks` (requires API keys from `hermes setup`)
 - **Restart:** `on-failure` with 10s delay
 - **Scope:** User-level Quadlet (rootless Podman)
+- **SELinux:** Volume mounted with `:z` (shared label for multi-container access)
+- **Note:** The gateway exits immediately if no API keys are configured. Run
+  `podman exec -it adhd-hermes-gateway hermes setup` to configure.
 
 ### Dashboard Service (`adhd-hermes-dashboard.container`)
 
 - **Image:** `docker.io/nousresearch/hermes-agent:latest`
 - **Network:** Host mode
-- **Data:** `~/.hermes` → `/opt/data`
-- **Command:** `dashboard --host 0.0.0.0 --no-open`
+- **Data:** `/var/home/kevbot/.hermes` → `/opt/data`
+- **Command:** `dashboard --host 0.0.0.0 --no-open --insecure`
 - **Port:** 9119 (firewalld restricted to LAN)
 - **Restart:** `on-failure` with 10s delay
 - **Scope:** User-level Quadlet (rootless Podman)
+- **SELinux:** Volume mounted with `:z` (shared label for multi-container access)
 
 ### Important: Rootless Quadlets
 
@@ -148,9 +152,14 @@ Both services run as **user-level Quadlets** (in `~/.config/containers/systemd/`
 not system-level. This means:
 
 - Managed via `systemctl --user` (not `systemctl`)
-- `%h`, `%u`, `%g` specifiers resolve to the user's home, UID, GID
+- Volume paths must use `/var/home/kevbot/` (not `/home/kevbot/` or `%h`)
+  — on bootc, `%h` resolves incorrectly to `/home/` but the actual data is
+  under `/var/home/`
+- `HERMES_UID` and `HERMES_GID` must be numeric (e.g., `1000`), not `%u`/`%g`
+  which resolve to the username string and cause `usermod` failures
 - `loginctl enable-linger kevbot` is required for services to survive logout
-- Volume mounts bind to the user's `~/.hermes/` directory
+- Volume mounts bind to `/var/home/kevbot/.hermes/` directory with `:z` SELinux
+  label for shared access between both containers
 
 ### Data Persistence
 
@@ -376,3 +385,18 @@ Items Claude Code should know about but **not start without explicit instruction
 - [x] Pre-switch cleanup on kevbotmini (OpenClaw, Ollama, old Quadlets, data removed)
 - [x] SSH access configured (id_ed25519_kevbotmini, ~/.ssh/config alias)
 - [x] Hardware audit (i5-6500T, 8GB, 463GB NVMe, SELinux enforcing)
+- [x] bootc switch executed — ThinkCentre now runs adhd-hermes-os:latest (Fedora 43)
+- [x] Ansible configure.yml run — firewall, Hermes dirs, Quadlets deployed, linger enabled
+- [x] Dashboard running on port 9119 (HTTP 200 confirmed)
+- [x] Quadlets fixed: `%h` → `/var/home/kevbot/`, `%u/%g` → `1000`, `--insecure` flag for dashboard
+
+### Known Issues
+
+- **Gateway exits without API keys** — needs `hermes setup` wizard to configure LLM
+  provider keys before the gateway will stay running
+- **`NetworkManager-wait-online.service`** was not enabled by default in the bootc image;
+  Ansible task added to enable it
+- **`%h` specifier in Quadlets** resolves to `/home/kevbot` instead of `/var/home/kevbot`
+  on bootc systems — hardcoded path required
+- **`%u`/`%g` specifiers** resolve to username strings, not numeric UIDs — Hermes
+  entrypoint rejects them in `usermod`; hardcoded `1000` required

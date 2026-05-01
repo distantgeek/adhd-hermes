@@ -7,9 +7,10 @@ Wants=network-online.target
 Image=docker.io/nousresearch/hermes-agent:latest
 ContainerName=adhd-hermes-gateway
 Network=host
-Volume=%h/.hermes:/opt/data
-Environment=HERMES_UID=%u
-Environment=HERMES_GID=%g
+Volume=/var/home/kevbot/.hermes:/opt/data:z
+Environment=HERMES_UID=1000
+Environment=HERMES_GID=1000
+Exec=hermes gateway run --accept-hooks
 LogDriver=journald
 
 [Service]

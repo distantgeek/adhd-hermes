@@ -66,6 +66,13 @@
 
     # --- User setup ---
 
+    - name: Ensure podman group exists
+      ansible.builtin.group:
+        name: podman
+        system: true
+        state: present
+      tags: [user]
+
     - name: Ensure primary user exists
       ansible.builtin.user:
         name: "{{ hermes_user }}"
@@ -78,6 +85,13 @@
         cmd: loginctl enable-linger {{ hermes_user }}
       changed_when: false
       tags: [user]
+
+    - name: Ensure NetworkManager-wait-online is enabled
+      ansible.builtin.systemd:
+        name: NetworkManager-wait-online.service
+        state: started
+        enabled: true
+      tags: [network]
 
     # --- Firewall ---
 
@@ -97,12 +111,15 @@
       tags: [firewall]
 
     - name: Restrict port 9119 to LAN only
-      ansible.posix.firewalld:
-        port: 9119/tcp
-        source: "{{ lan_cidr }}"
-        state: enabled
-        permanent: true
-        immediate: true
+      ansible.builtin.command:
+        cmd: firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source address="{{ lan_cidr }}" port port="9119" protocol="tcp" accept'
+      changed_when: false
+      tags: [firewall]
+
+    - name: Also apply the LAN restriction immediately
+      ansible.builtin.command:
+        cmd: firewall-cmd --add-rich-rule='rule family="ipv4" source address="{{ lan_cidr }}" port port="9119" protocol="tcp" accept'
+      changed_when: false
       tags: [firewall]
 
     - name: Reload firewalld

@@ -7,10 +7,10 @@ Wants=adhd-hermes-gateway.service
 Image=docker.io/nousresearch/hermes-agent:latest
 ContainerName=adhd-hermes-dashboard
 Network=host
-Volume=%h/.hermes:/opt/data
-Environment=HERMES_UID=%u
-Environment=HERMES_GID=%g
-Exec=dashboard --host 0.0.0.0 --no-open
+Volume=/var/home/kevbot/.hermes:/opt/data:z
+Environment=HERMES_UID=1000
+Environment=HERMES_GID=1000
+Exec=dashboard --host 0.0.0.0 --no-open --insecure
 LogDriver=journald
 
 [Service]
