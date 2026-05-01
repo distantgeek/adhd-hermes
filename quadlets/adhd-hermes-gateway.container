@@ -13,7 +13,10 @@ Network=host
 Volume=/var/home/kevbot/.hermes:/opt/data:z
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000
-Exec=hermes gateway run --accept-hooks
+# Override entrypoint to run gateway directly. The image's default entrypoint
+# (tini → entrypoint.sh) drops to interactive mode and exits on no-TTY.
+Entrypoint=/opt/hermes/.venv/bin/hermes
+Exec=gateway run --accept-hooks --replace -v
 LogDriver=journald
 
 [Service]
