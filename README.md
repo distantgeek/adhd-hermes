@@ -2,7 +2,7 @@
 
 ADHD executive function assistant appliance — a Fedora 43 bootc image that
 runs [Hermes Agent](https://github.com/NousResearch/hermes-agent) via rootless
-Podman Quadlets on bare metal (ThinkCentre M910q).
+Podman Quadlets on bare metal (ThinkCentre M910q, i5-6500T, 8GB RAM).
 
 ## What This Is
 
@@ -74,7 +74,16 @@ make deploy VM_HOST=192.168.2.x
 make upgrade VM_HOST=192.168.2.x
 ```
 
-### Switch an existing adhd-claw-os VM to adhd-hermes-os
+### Switch from adhd-claw-os to adhd-hermes-os
+
+```bash
+# From devbox:
+make switch VM_HOST=192.168.2.x
+# Wait for reboot (~30s), then:
+make configure VM_HOST=192.168.2.x
+```
+
+Or manually:
 
 ```bash
 ssh kevbot@<thinkcentre-ip>
@@ -88,7 +97,7 @@ Post-reboot, run Ansible configuration:
 make configure VM_HOST=192.168.2.x
 ```
 
-### Start the Hermes services
+Start the Hermes services:
 
 ```bash
 systemctl --user daemon-reload
@@ -99,12 +108,6 @@ Run the Hermes setup wizard on first start:
 
 ```bash
 podman exec -it adhd-hermes-gateway hermes setup
-```
-
-Or migrate from OpenClaw:
-
-```bash
-podman exec -it adhd-hermes-gateway hermes claw migrate
 ```
 
 ## Repository Structure

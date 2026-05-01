@@ -37,14 +37,25 @@ Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machi
 
 | Property | Value |
 |----------|-------|
-| Hardware | ThinkCentre M910q (i5-7500T, 8GB RAM, bare metal) |
-| Hostname | `adhd-hermes` |
-| IP | TBD (DHCP reservation planned) |
+| Hardware | ThinkCentre M910q (i5-6500T, 4C, 8GB RAM, 463GB NVMe, bare metal) |
+| Hostname | `kevbotmini` |
+| IP | Set via `VM_HOST` Makefile variable (currently 192.168.2.25) |
+| SSH alias | `kevbotmini` (configured in `~/.ssh/config` on devbox) |
 | SSH user | `kevbot` |
-| bootc image | `ghcr.io/distantgeek/adhd-hermes-os:latest` |
-| Previous image | `ghcr.io/distantgeek/adhd-claw-os:latest` (switched via `bootc switch`) |
+| SSH key | `~/.ssh/id_ed25519_kevbotmini` (on devbox) |
+| bootc image | `ghcr.io/distantgeek/adhd-hermes-os:latest` (public registry) |
+| Previous image | `ghcr.io/distantgeek/adhd-claw-os:latest` (cleaned up, ready for switch) |
 | Container runtime | Rootless Podman via systemd Quadlets |
-| Status | Pending deployment — bare metal, not a VM |
+| SELinux | Enforcing |
+| Pre-switch status | Old OpenClaw + Ollama containers stopped, disabled, and removed. Data cleared. |
+| Status | Ready for `bootc switch` from adhd-claw-os to adhd-hermes-os |
+
+### ThinkCentre Hardware Notes
+
+- i5-6500T (4 cores, no HT), not i5-7500T as originally documented
+- Supports x86-64-v3 (verified — Fedora 43 bootc compatible)
+- No swap configured
+- 7.6GB RAM available (~985MB used at idle)
 
 ---
 
@@ -52,11 +63,10 @@ Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machi
 
 When Claude Code first opens this project, complete these steps before any other work:
 
-- [ ] **Verify environment variables are loaded.** Run `echo $PROXMOX_HOST` — if empty,
-      source `~/.config/proxmox/token`.
-- [ ] **Confirm hook suite is wired** (if running from fedora-claude-devbox).
-- [ ] **Check `~/.config/proxmox/token` exists** on the operator machine.
-- [ ] **Test Proxmox API connectivity.**
+- [ ] **Verify SSH access to ThinkCentre.** Run `ssh kevbotmini echo OK` — if it fails,
+      check `~/.ssh/config` and `~/.ssh/id_ed25519_kevbotmini`.
+- [ ] **Verify GHCR package is public.** Run `podman pull ghcr.io/distantgeek/adhd-hermes-os:latest`
+      to confirm the registry image is accessible.
 - [ ] **Check git remote** is set correctly. Run `git remote -v`.
 - [ ] **Review Project Roadmap** at the bottom of this file — do not start roadmap items
       without explicit instruction.
@@ -72,7 +82,7 @@ When Claude Code first opens this project, complete these steps before any other
 | Proxmox host | Primary hypervisor | Proxmox VE | Hosts devbox VM and other VMs |
 | TrueNAS | NAS + Docker stacks | TrueNAS Scale | Dockge, NPM, Arr stack, Jellyfin |
 | Fedora Server | SOC stack | Fedora Server 43 | soc-deploy |
-| ThinkCentre | ADHD assistant | Fedora 43 (bootc) | **adhd-hermes target** |
+| ThinkCentre | ADHD assistant | Fedora 43 (bootc) | **adhd-hermes target**, i5-6500T, 8GB, bare metal |
 | FX-8 / GTX 1060 6GB | Auxiliary inference | Fedora | faster-whisper STT |
 | Aurora-nvidia | Daily driver desktop | Aurora (Universal Blue) | NVIDIA GPU |
 | Laptop | Mobile dev | (varies) | SSH client |
@@ -284,18 +294,37 @@ make build-image HERMES_USER=kevbot && make push-image && make upgrade VM_HOST=<
 
 ### Switching from adhd-claw-os
 
+The ThinkCentre (kevbotmini) was previously running `adhd-claw-os` (CentOS Stream 10)
+with OpenClaw and Ollama running as root-level system Quadlets. All old containers,
+data, and Quadlets have been cleaned up. The switch procedure is:
+
 ```bash
-ssh kevbot@<thinkcentre-ip>
-sudo systemctl stop openclaw    # stop old container
-sudo bootc switch ghcr.io/distantgeek/adhd-hermes-os:latest
-sudo reboot
-# After reboot:
-make configure VM_HOST=<ip>
-systemctl --user daemon-reload
-systemctl --user start adhd-hermes-gateway adhd-hermes-dashboard
-# Migrate from OpenClaw:
-podman exec -it adhd-hermes-gateway hermes claw migrate
+# From devbox:
+ssh kevbotmini sudo bootc switch ghcr.io/distantgeek/adhd-hermes-os:latest
+ssh kevbotmini sudo reboot
+# Wait ~30s for reboot, then:
+make configure VM_HOST=192.168.2.25
+# Start Hermes services:
+ssh kevbotmini systemctl --user daemon-reload
+ssh kevbotmini systemctl --user start adhd-hermes-gateway adhd-hermes-dashboard
+# Run setup wizard:
+ssh kevbotmini podman exec -it adhd-hermes-gateway hermes setup
 ```
+
+### Pre-switch cleanup already performed
+
+The following were removed from kevbotmini before the bootc switch:
+
+- OpenClaw container (stopped, disabled, removed)
+- Ollama container (stopped, disabled, removed)
+- `/etc/containers/systemd/openclaw.container` (removed)
+- `/etc/containers/systemd/ollama.container` (removed)
+- `/etc/containers/systemd/adhd-claw.network` (removed)
+- `/var/lib/openclaw/` (removed — no data needed)
+- `/var/lib/ollama/` (removed — Ollama not carried forward)
+- `/etc/openclaw/env` (removed — secrets, not migrated)
+- Container images for openclaw and ollama (removed, ~9GB freed)
+- `adhd-claw` podman network (removed)
 
 ---
 
@@ -330,12 +359,20 @@ podman exec -it adhd-hermes-gateway hermes claw migrate
 
 Items Claude Code should know about but **not start without explicit instruction:**
 
-1. **Ansible playbooks** — `configure.yml` and `validate.yml` need substantive content
+1. ~~**Ansible playbooks** — `configure.yml` has baseline content, `validate.yml` needs creation~~
 2. **NPM proxy configuration** — `hermes.distantgeek.net` reverse proxy setup on TrueNAS
 3. **Hermes Agent configuration** — `hermes setup` wizard, SOUL.md customization,
    Telegram/Discord/Signal integration
 4. **Homebrew post-deploy** — Ansible task to install Homebrew into `~kevbot`
 5. **Flatpak remote + apps** — Ansible task for Flathub remote and specific Flatpaks
 6. **Custom Hermes skills** — ADHD-specific nudges, calendar monitoring, task tracking
+7. **validate.yml playbook** — Ansible validation playbook for post-deploy health checks
+8. **Ollama decision** — Consider re-adding Ollama as a rootless user Quadlet for local LLM inference
+9. **DHCP reservation** — Set static/reserved IP for kevbotmini on router
 
-Do not begin any of the above unless the user asks.
+### Completed
+
+- [x] Image built and pushed to GHCR (public)
+- [x] Pre-switch cleanup on kevbotmini (OpenClaw, Ollama, old Quadlets, data removed)
+- [x] SSH access configured (id_ed25519_kevbotmini, ~/.ssh/config alias)
+- [x] Hardware audit (i5-6500T, 8GB, 463GB NVMe, SELinux enforcing)

@@ -17,6 +17,9 @@ credentials
 secrets
 token
 
+# --- SSH config (site-specific, never commit) ---
+ssh_config
+
 # --- Hermes data (lives on the VM, not in this repo) ---
 .hermes/
 

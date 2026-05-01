@@ -1,8 +1,8 @@
 ---
 # adhd-hermes post-deploy configuration
-# Usage: ansible-playbook configure.yml -i <host>, -u kevbot --private-key ~/.ssh/id_ed25519
+# Usage: ansible-playbook configure.yml -i <host>, -u kevbot --private-key ~/.ssh/id_ed25519_kevbotmini
 #
-# This playbook is run after a fresh bootc deploy or upgrade to configure
+# This playbook is run after a fresh bootc deploy, upgrade, or switch to configure
 # host-specific settings that are not baked into the image.
 
 - name: Configure adhd-hermes appliance
@@ -10,9 +10,62 @@
   become: true
   vars:
     hermes_user: kevbot
+    hermes_home: "/var/home/{{ hermes_user }}"
     lan_cidr: "192.168.0.0/16"
 
   tasks:
+    # --- Cleanup: legacy adhd-claw-os artifacts ---
+    # These are safe to remove after switching from adhd-claw-os.
+    # If running on a fresh install, these tasks are no-ops.
+
+    - name: Stop legacy OpenClaw container if present
+      ansible.builtin.systemd:
+        name: openclaw
+        state: stopped
+        enabled: false
+        scope: system
+      failed_when: false
+      tags: [cleanup]
+
+    - name: Stop legacy Ollama container if present
+      ansible.builtin.systemd:
+        name: ollama
+        state: stopped
+        enabled: false
+        scope: system
+      failed_when: false
+      tags: [cleanup]
+
+    - name: Remove legacy system Quadlets
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/containers/systemd/openclaw.container
+        - /etc/containers/systemd/ollama.container
+        - /etc/containers/systemd/adhd-claw.network
+      tags: [cleanup]
+
+    - name: Remove legacy OpenClaw environment file
+      ansible.builtin.file:
+        path: /etc/openclaw/env
+        state: absent
+      tags: [cleanup]
+
+    - name: Remove legacy adhd-claw podman network
+      ansible.builtin.command:
+        cmd: podman network rm adhd-claw
+      failed_when: false
+      changed_when: false
+      tags: [cleanup]
+
+    - name: Reload systemd after cleanup
+      ansible.builtin.systemd:
+        daemon_reload: true
+      tags: [cleanup]
+
+    # --- User setup ---
+
     - name: Ensure primary user exists
       ansible.builtin.user:
         name: "{{ hermes_user }}"
@@ -25,6 +78,8 @@
         cmd: loginctl enable-linger {{ hermes_user }}
       changed_when: false
       tags: [user]
+
+    # --- Firewall ---
 
     - name: Ensure firewalld is running and enabled
       ansible.builtin.systemd:
@@ -56,9 +111,12 @@
       changed_when: false
       tags: [firewall]
 
+    # --- Hermes data directories ---
+    # On bootc systems, user home is /var/home/<user>, not /home/<user>.
+
     - name: Ensure Hermes data directory exists
       ansible.builtin.file:
-        path: "/home/{{ hermes_user }}/.hermes"
+        path: "{{ hermes_home }}/.hermes"
         state: directory
         owner: "{{ hermes_user }}"
         group: "{{ hermes_user }}"
@@ -67,7 +125,7 @@
 
     - name: Ensure Hermes subdirectories exist
       ansible.builtin.file:
-        path: "/home/{{ hermes_user }}/.hermes/{{ item }}"
+        path: "{{ hermes_home }}/.hermes/{{ item }}"
         state: directory
         owner: "{{ hermes_user }}"
         group: "{{ hermes_user }}"
@@ -84,6 +142,37 @@
         - workspace
         - home
       tags: [hermes]
+
+    # --- Deploy Quadlets ---
+
+    - name: Ensure user Quadlet directory exists
+      ansible.builtin.file:
+        path: "{{ hermes_home }}/.config/containers/systemd"
+        state: directory
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0755"
+      tags: [quadlets]
+
+    - name: Deploy gateway Quadlet
+      ansible.builtin.copy:
+        src: "../../quadlets/adhd-hermes-gateway.container"
+        dest: "{{ hermes_home }}/.config/containers/systemd/adhd-hermes-gateway.container"
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0644"
+      tags: [quadlets]
+
+    - name: Deploy dashboard Quadlet
+      ansible.builtin.copy:
+        src: "../../quadlets/adhd-hermes-dashboard.container"
+        dest: "{{ hermes_home }}/.config/containers/systemd/adhd-hermes-dashboard.container"
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0644"
+      tags: [quadlets]
+
+    # --- Systemd services ---
 
     - name: Reload user systemd daemon
       ansible.builtin.systemd:

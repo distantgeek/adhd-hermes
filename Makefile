@@ -7,12 +7,12 @@ TAG            ?= latest
 FULL_IMAGE     ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 VM_HOST        ?= $(error VM_HOST is required for this target)
 VM_USER        ?= kevbot
-SSH_KEY        ?= ~/.ssh/id_ed25519
+SSH_KEY        ?= ~/.ssh/id_ed25519_kevbotmini
 ANSIBLE_OPTS   ?=
 HERMES_USER    ?= kevbot
 
 .PHONY: help build-image push-image deploy upgrade rollback configure \
-        test-connection validate clean
+        test-connection validate switch clean
 
 help:
 	@echo ""
@@ -27,6 +27,7 @@ help:
 	@echo "  make deploy VM_HOST=<ip>          Run Ansible config against VM"
 	@echo "  make upgrade VM_HOST=<ip>          bootc upgrade + reboot target VM"
 	@echo "  make rollback VM_HOST=<ip>         bootc rollback + reboot target VM"
+	@echo "  make switch VM_HOST=<ip>           bootc switch to adhd-hermes-os + reboot"
 	@echo "  make configure VM_HOST=<ip>        Deploy Quadlets + configure services"
 	@echo "  make validate VM_HOST=<ip>         Verify deployment health"
 	@echo "  make test-connection VM_HOST=<ip> Test SSH connectivity"
@@ -82,6 +83,12 @@ rollback:
 	ssh -i $(SSH_KEY) $(VM_USER)@$(VM_HOST) \
 		"sudo bootc rollback && sudo reboot" || true
 	@echo ">>> VM rebooting. Reconnect in ~30 seconds."
+
+switch:
+	@echo ">>> Switching $(VM_HOST) to adhd-hermes-os"
+	ssh -i $(SSH_KEY) $(VM_USER)@$(VM_HOST) \
+		"sudo bootc switch $(FULL_IMAGE) && sudo reboot" || true
+	@echo ">>> VM rebooting into adhd-hermes-os. Reconnect in ~30 seconds."
 
 configure:
 	@echo ">>> Deploying Quadlets and configuring services on $(VM_HOST)"
