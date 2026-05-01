@@ -111,7 +111,8 @@ EOF
 # Must run after all /etc/skel setup so useradd -m copies the full skel.
 # ---------------------------------------------------------------------------
 ARG HERMES_USER=kevbot
-RUN useradd -m -G wheel,podman -s /bin/bash ${HERMES_USER} \
+RUN groupadd -r podman 2>/dev/null || true \
+    && useradd -m -G wheel,podman -s /bin/bash ${HERMES_USER} \
     && echo "${HERMES_USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${HERMES_USER} \
     && chmod 440 /etc/sudoers.d/${HERMES_USER}
 
