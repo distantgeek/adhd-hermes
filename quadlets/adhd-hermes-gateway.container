@@ -1,7 +1,7 @@
 [Unit]
 Description=ADHD-Hermes Gateway (Messaging + Cron)
-After=network-online.target
-Wants=network-online.target
+# No network-online.target dependency — Network=host with Restart=on-failure
+# handles transient network gaps at boot without blocking startup.
 
 [Container]
 Image=docker.io/nousresearch/hermes-agent:latest
