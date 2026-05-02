@@ -94,6 +94,36 @@
         shell: /bin/bash
       tags: [user]
 
+    - name: Ensure ~/.local/bin exists
+      ansible.builtin.file:
+        path: "{{ hermes_home }}/.local/bin"
+        state: directory
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0755"
+      tags: [user]
+
+    - name: Create docker compatibility symlinks in ~/.local/bin
+      ansible.builtin.file:
+        src: "/usr/bin/podman"
+        dest: "{{ hermes_home }}/.local/bin/{{ item }}"
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        state: link
+      loop:
+        - docker
+        - docker-compose
+      tags: [user]
+
+    - name: Ensure ~/.local/bin is in PATH for login shells
+      ansible.builtin.copy:
+        dest: /etc/profile.d/local-bin.sh
+        content: 'export PATH="$HOME/.local/bin:$PATH"'
+        owner: root
+        group: root
+        mode: "0644"
+      tags: [user]
+
     - name: Enable linger for primary user
       ansible.builtin.command:
         cmd: loginctl enable-linger {{ hermes_user }}

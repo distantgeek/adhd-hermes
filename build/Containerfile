@@ -39,6 +39,14 @@ RUN dnf install -y \
     && dnf clean all
 
 # ---------------------------------------------------------------------------
+# Docker-compatible symlinks — Hermes terminal backend and other tools
+# call `docker` via $PATH. Podman provides Docker-compatible CLI at /usr/bin/podman.
+# /usr is read-only on bootc (composefs), so this must be in the image layer.
+# ---------------------------------------------------------------------------
+RUN ln -sf /usr/bin/podman /usr/local/bin/docker \
+    && ln -sf /usr/bin/podman /usr/local/bin/docker-compose
+
+# ---------------------------------------------------------------------------
 # Enable system services in the image
 # ---------------------------------------------------------------------------
 RUN systemctl enable qemu-guest-agent \
