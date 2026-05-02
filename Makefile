@@ -7,7 +7,7 @@ TAG            ?= latest
 FULL_IMAGE     ?= $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 VM_HOST        ?= $(error VM_HOST is required for this target)
 VM_USER        ?= kevbot
-SSH_KEY        ?= ~/.ssh/id_ed25519_kevbotmini
+SSH_KEY        ?= ~/.ssh/id_ed25519
 ANSIBLE_OPTS   ?=
 HERMES_USER    ?= kevbot
 

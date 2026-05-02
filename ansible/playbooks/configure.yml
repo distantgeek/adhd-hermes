@@ -1,6 +1,6 @@
 ---
 # adhd-hermes post-deploy configuration
-# Usage: ansible-playbook configure.yml -i <host>, -u kevbot --private-key ~/.ssh/id_ed25519_kevbotmini
+# Usage: ansible-playbook configure.yml -i <host>, -u kevbot --private-key <ssh-key>
 #
 # This playbook is run after a fresh bootc deploy, upgrade, or switch to configure
 # host-specific settings that are not baked into the image.
