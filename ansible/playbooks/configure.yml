@@ -124,6 +124,28 @@
         mode: "0644"
       tags: [user]
 
+    - name: Add hermes alias to user bashrc
+      ansible.builtin.lineinfile:
+        path: "{{ hermes_home }}/.bashrc"
+        line: "alias hermes='podman exec -it adhd-hermes-gateway /opt/hermes/.venv/bin/hermes'"
+        regexp: "^alias hermes="
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0644"
+        create: true
+      tags: [user, hermes]
+
+    - name: Enable podman user socket
+      ansible.builtin.systemd:
+        name: podman.socket
+        scope: user
+        enabled: true
+        state: started
+      become: false
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid }}"
+      tags: [user, podman]
+
     - name: Enable linger for primary user
       ansible.builtin.command:
         cmd: loginctl enable-linger {{ hermes_user }}
