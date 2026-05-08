@@ -128,10 +128,11 @@ When first opening this project, complete these steps before any other work:
 - **Image:** `docker.io/nousresearch/hermes-agent:latest`
 - **Network:** Host mode (required for Telegram, Discord, Signal gateways)
 - **Data:** `/var/home/kevbot/.hermes` → `/opt/data` (bootc uses `/var/home/`, not `/home/`)
-- **Command:** `gateway run --accept-hooks --replace -v` (via custom Entrypoint)
-- **Notes:** The image entrypoint drops to interactive mode and exits on no-TTY.
-  The Quadlet overrides `Entrypoint=/opt/hermes/.venv/bin/hermes` to run the
-  gateway as a foreground daemon directly. Do NOT remove this override.
+- **Entrypoint:** `/opt/hermes/docker/entrypoint.sh` (image's built-in entrypoint)
+- **Command:** `gateway run --accept-hooks --replace -v`
+- **API Server:** Enabled on port 8642 for cross-container health checks
+- **Notes:** The image entrypoint handles UID/GID remapping and privilege dropping
+  from root to the `hermes` user. Hermes v0.13.0+ refuses to run as root.
 - **Terminal backend:** `local` (not `docker`). The `docker` backend requires
   mounting the Podman socket, which fails under rootless Podman due to SELinux
   and uid mapping. With `local`, Hermes executes commands directly inside the
@@ -142,11 +143,14 @@ When first opening this project, complete these steps before any other work:
 - **Image:** `docker.io/nousresearch/hermes-agent:latest`
 - **Network:** Host mode
 - **Data:** `/var/home/kevbot/.hermes` → `/opt/data`
-- **Command:** `dashboard --host 0.0.0.0 --no-open --insecure`
+- **Entrypoint:** Shell wrapper that fixes TUI build permissions, then execs
+  the image entrypoint with `dashboard --host 0.0.0.0 --no-open --insecure --tui`
 - **Port:** 9119 (firewalld restricted to LAN)
 - **Restart:** `on-failure` with 10s delay
 - **Scope:** User-level Quadlet (rootless Podman)
 - **SELinux:** Volume mounted with `:z` (shared label for multi-container access)
+- **Gateway health:** `GATEWAY_HEALTH_URL=http://localhost:8642/health` — bypasses
+  lock file/PID namespace isolation so the dashboard can detect gateway status
 
 ### Hermes Lab SSH Access
 
@@ -410,12 +414,15 @@ Items to know about but **do not start without explicit instruction:**
 - [x] Ansible configure.yml run — firewall, Hermes dirs, Quadlets deployed, linger enabled
 - [x] Dashboard running on port 9119 (HTTP 200 confirmed)
 - [x] Quadlets fixed: `%h` → `/var/home/kevbot/`, `%u/%g` → `1000`, `--insecure` flag for dashboard
-- [x] Gateway running with Entrypoint override (bypasses TUI entrypoint)
+- [x] Gateway running with image entrypoint (UID/GID remap + privilege drop)
 - [x] Hermes setup completed (OpenCode Go provider, deepseek-v4-pro default)
 - [x] SSH lab access configured (Hermes → devbox VM via generated SSH key)
 - [x] Terminal backend switched from `docker` to `local` — Podman socket mount
   doesn't work for rootless containers (SELinux + uid mapping blocks socket connect)
 - [x] `hermes` alias added to kevbotmini `~/.bashrc` for quick TUI access
+- [x] Dashboard `--tui` flag enabled with permission fix wrapper
+- [x] Cross-container gateway health via `GATEWAY_HEALTH_URL` (port 8642 API server)
+- [x] Signal/WhatsApp disabled in `.env` and `platform_toolsets` (no services to connect)
 
 ### Known Issues
 
@@ -424,9 +431,8 @@ Items to know about but **do not start without explicit instruction:**
 - **`%h` specifier in Quadlets** resolves to `/home/kevbot` instead of `/var/home/kevbot`
   on bootc systems — hardcoded path required
 - **`%u`/`%g` specifiers** resolve to username strings, not numeric UIDs — hardcoded `1000` required
-- **Gateway Quadlet requires Entrypoint override** — the image's default entrypoint
-  (tini → entrypoint.sh) drops to interactive mode and exits on no-TTY. The Quadlet
-  must use `Entrypoint=/opt/hermes/.venv/bin/hermes` with `Exec=gateway run --accept-hooks --replace -v`
 - **Hermes terminal `docker` backend doesn't work with rootless Podman** — mounting the
   Podman socket into the container results in permission denied (SELinux + uid mapping).
   Use `terminal.backend: local` instead. Commands run directly inside the gateway container.
+- **`hermes config set` changes file ownership to root** — must run `chown` on
+  `~/.hermes/config.yaml` after using it, or the gateway/dashboard can't read it
