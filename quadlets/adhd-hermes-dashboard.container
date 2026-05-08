@@ -14,6 +14,8 @@ Network=host
 Volume=/var/home/kevbot/.hermes:/opt/data:z
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000
+# Cross-container gateway health check — bypasses lock file/PID namespace isolation.
+Environment=GATEWAY_HEALTH_URL=http://localhost:8642/health
 # Fix TUI build permissions before entrypoint drops privileges.
 # The --tui flag builds the TUI binary at startup into /opt/hermes/ui-tui/
 # which is owned by root in the image. We chmod as root, then exec the
