@@ -14,7 +14,7 @@ Network=host
 Volume=/var/home/kevbot/.hermes:/opt/data:z
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000
-Exec=dashboard --host 0.0.0.0 --no-open --insecure
+Exec=dashboard --host 0.0.0.0 --no-open --insecure --tui
 LogDriver=journald
 
 [Service]
