@@ -13,9 +13,11 @@ Network=host
 Volume=/var/home/kevbot/.hermes:/opt/data:z
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000
-# Override entrypoint to run gateway directly. The image's default entrypoint
-# (tini → entrypoint.sh) drops to interactive mode and exits on no-TTY.
-Entrypoint=/opt/hermes/.venv/bin/hermes
+# Use the image's entrypoint script which handles UID/GID remapping and
+# privilege dropping from root to the hermes user. Passing the gateway
+# command as Exec means it runs as a non-root user after the entrypoint
+# drops privileges, satisfying Hermes' root-safety check.
+Entrypoint=/opt/hermes/docker/entrypoint.sh
 Exec=gateway run --accept-hooks --replace -v
 LogDriver=journald
 
