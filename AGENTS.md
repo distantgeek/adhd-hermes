@@ -143,8 +143,10 @@ When first opening this project, complete these steps before any other work:
 - **Image:** `docker.io/nousresearch/hermes-agent:latest`
 - **Network:** Host mode
 - **Data:** `/var/home/kevbot/.hermes` → `/opt/data`
-- **Entrypoint:** Shell wrapper that fixes TUI build permissions, then execs
-  the image entrypoint with `dashboard --host 0.0.0.0 --no-open --insecure --tui`
+- **Entrypoint:** Image's built-in entrypoint (`/opt/hermes/docker/entrypoint.sh`)
+- **TUI build:** tmpfs mount at `/opt/hermes/ui-tui/packages/hermes-ink/dist`
+  — fully writable, ephemeral, no permission issues after privilege drop
+- **Command:** `dashboard --host 0.0.0.0 --no-open --insecure --tui`
 - **Port:** 9119 (firewalld restricted to LAN)
 - **Restart:** `on-failure` with 10s delay
 - **Scope:** User-level Quadlet (rootless Podman)
@@ -420,7 +422,7 @@ Items to know about but **do not start without explicit instruction:**
 - [x] Terminal backend switched from `docker` to `local` — Podman socket mount
   doesn't work for rootless containers (SELinux + uid mapping blocks socket connect)
 - [x] `hermes` alias added to kevbotmini `~/.bashrc` for quick TUI access
-- [x] Dashboard `--tui` flag enabled with permission fix wrapper
+- [x] Dashboard `--tui` flag enabled with tmpfs mount for TUI build output
 - [x] Cross-container gateway health via `GATEWAY_HEALTH_URL` (port 8642 API server)
 - [x] Signal/WhatsApp disabled in `.env` and `platform_toolsets` (no services to connect)
 
