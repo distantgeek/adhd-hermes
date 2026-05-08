@@ -128,7 +128,7 @@ adhd-hermes/
 │   └── playbooks/
 │       └── configure.yml              # post-deploy configuration
 ├── Makefile
-├── CLAUDE.md                          # Claude Code context document
+├── AGENTS.md                          # Agent context document
 ├── LICENSE
 └── README.md
 ```

@@ -1,5 +1,5 @@
 # adhd-hermes
-## Claude Code Context Document
+## Agent Context Document
 
 > **First time with this project?** Read the [First Run Checklist](#first-run-checklist)
 > before doing anything else.
@@ -22,7 +22,7 @@ Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machi
 
 | Repo | Description |
 |------|-------------|
-| `fedora-claude-devbox` | Fedora bootc Claude Code devbox (this VM) |
+| `fedora-claude-devbox` | Fedora bootc AI devbox |
 | `adhd-hermes` | **This project** — Hermes Agent appliance |
 | `soc-deploy` | Fedora Server SOC stack |
 | `nagging-bot` | Original ADHD nudge concept (superseded by Hermes) |
@@ -61,7 +61,7 @@ Podman Quadlets. Designed for deployment on a ThinkCentre M910q bare metal machi
 
 ## First Run Checklist
 
-When Claude Code first opens this project, complete these steps before any other work:
+When first opening this project, complete these steps before any other work:
 
 - [ ] **Verify SSH access to target.** Run `make test-connection VM_HOST=<ip>` — if it fails,
       check `~/.ssh/config` and the `SSH_KEY` Makefile variable.
@@ -86,7 +86,7 @@ When Claude Code first opens this project, complete these steps before any other
 | FX-8 / GTX 1060 6GB | Auxiliary inference | Fedora | faster-whisper STT |
 | Aurora-nvidia | Daily driver desktop | Aurora (Universal Blue) | NVIDIA GPU |
 | Laptop | Mobile dev | (varies) | SSH client |
-| This VM | Claude Code devbox | Fedora bootc | Build environment |
+| This VM | AI devbox | Fedora bootc | Build environment |
 
 ### Network Topology
 
@@ -101,7 +101,7 @@ When Claude Code first opens this project, complete these steps before any other
 |--------|----------|-------|
 | All homelab systems | `kevbot` | Primary operator user |
 | Hermes container | `hermes` (UID 10000) | Remapped to host UID via HERMES_UID |
-| Proxmox API | `claude@pam` | Claude Code service account |
+| Proxmox API | `claude@pam` | Proxmox service account |
 
 ---
 
@@ -250,8 +250,8 @@ TrueNAS can reach it.
 credentials  secrets
 ```
 
-If any of the above appears in tool output, treat it as a scrubber miss.
-Do not reproduce the content. Note the miss and continue.
+If any of the above appears in tool output, do not reproduce the content.
+Note the security miss and continue.
 
 ---
 
@@ -326,7 +326,7 @@ make build-image HERMES_USER=kevbot && make push-image && make upgrade VM_HOST=<
 
 The ThinkCentre (kevbotmini) was previously running `adhd-claw-os` (CentOS Stream 10)
 with OpenClaw and Ollama running as root-level system Quadlets. All old containers,
-data, and Quadlets have been cleaned up. The switch procedure is:
+data, and Quadrants have been cleaned up. The switch procedure is:
 
 ```bash
 # From devbox:
@@ -387,7 +387,7 @@ The following were removed from kevbotmini before the bootc switch:
 
 ## Project Roadmap
 
-Items Claude Code should know about but **not start without explicit instruction:**
+Items to know about but **do not start without explicit instruction:**
 
 1. ~~**Ansible playbooks** — `configure.yml` has baseline content, `validate.yml` needs creation~~
 2. **NPM proxy configuration** — `hermes.distantgeek.net` reverse proxy setup on TrueNAS
