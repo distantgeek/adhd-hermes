@@ -12,16 +12,17 @@ Network=host
 # HERMES_UID/HERMES_GID must be numeric — %u/%g resolve to username strings.
 # --insecure is required for 0.0.0.0 bind; firewalld restricts to LAN only.
 Volume=/var/home/kevbot/.hermes:/opt/data:z
+# tmpfs for TUI build output — ephemeral, fully writable, no permission issues.
+# The --tui flag compiles the TUI binary at startup; this directory is owned
+# by root in the image and the build fails after privilege dropping.
+Mount=type=tmpfs,target=/opt/hermes/ui-tui/packages/hermes-ink/dist,tmpfs-mode=0777
 Environment=HERMES_UID=1000
 Environment=HERMES_GID=1000
 # Cross-container gateway health check — bypasses lock file/PID namespace isolation.
 Environment=GATEWAY_HEALTH_URL=http://localhost:8642/health
-# Fix TUI build permissions before entrypoint drops privileges.
-# The --tui flag builds the TUI binary at startup into /opt/hermes/ui-tui/
-# which is owned by root in the image. We chmod as root, then exec the
-# entrypoint which handles UID/GID remapping and privilege dropping.
-Entrypoint=sh
-Exec=-c "chmod -R 777 /opt/hermes/ui-tui/ && exec /opt/hermes/docker/entrypoint.sh dashboard --host 0.0.0.0 --no-open --insecure --tui"
+# Use the image's entrypoint for UID/GID remapping and privilege dropping.
+Entrypoint=/opt/hermes/docker/entrypoint.sh
+Exec=dashboard --host 0.0.0.0 --no-open --insecure --tui
 LogDriver=journald
 
 [Service]
