@@ -146,10 +146,33 @@
 
 ## 3. OPENCLAW MARKETPLACE
 
-**Finding:** No dedicated ADHD executive function skill found in OpenClaw marketplace.
-- OpenClaw skills store (中文) has general productivity skills but no ADHD-specific ones
-- General planner skills exist (natural-language-planner) but lack ADHD adaptations
-- This confirms the space is underserved — our skill would be novel
+### 3.1 ADHD Assistant (matthomeiasmandr/adhd-assistant)
+**URL:** https://github.com/matthomeiasmandr/adhd-assistant
+**Install:** `npx clawhub@latest install adhd-assistant`
+**Also listed on:** https://openclawskills.wiki/skill/adhd-assistant
+
+**What it does:**
+- ADHD-friendly life management assistant for OpenClaw/SkillBoss
+- Daily planning & check-ins (morning planning, 1-3 priorities, time-blocked schedules with buffers)
+- Task breakdown into micro-steps (2-5 min each)
+- Time management with time blindness support
+- Prioritization (Eisenhower Matrix, Daily Top 3)
+- Body doubling sessions (25-50 min virtual co-working)
+- Dopamine regulation (personalized "dopamine menus", micro-rewards)
+- Emotional support (shame/guilt reframing, RSD support)
+- End-of-day & weekly reviews
+
+**Trigger phrases:** "I can't get started", "I have too much to do", "I keep forgetting", "Where did the day go?", "I'm so disorganized", "I need help planning", "I feel overwhelmed", "My brain is all over the place"
+
+**Core principles:** Externalize everything, small steps win, progress over perfection, interest-based motivation, gentle accountability
+
+**What we can borrow:** Trigger phrase detection, emotional support scripts, dopamine menus, shutdown rituals, body doubling session structure
+
+**What we do better:** AI agent integration (cron, subagents, messaging), cross-platform (WhatsApp/Signal/Telegram), supply chain security, pattern learning, context switching recovery
+
+### 3.2 OpenClaw Skills Store (中文)
+- General productivity skills but no additional ADHD-specific ones
+- Confirms the space is underserved — only one ADHD skill exists, and it's SkillBoss-specific
 
 ---
 
