@@ -49,3 +49,7 @@ logs/
 __pycache__/
 *.pyc
 *.pyo
+
+# --- Dev tools (installed by setup.sh, not in repo) ---
+.venvs/
+.local/

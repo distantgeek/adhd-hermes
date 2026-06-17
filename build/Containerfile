@@ -36,7 +36,12 @@ RUN dnf install -y \
     ripgrep \
     fd-find \
     bat \
+    nodejs \
+    npm \
     && dnf clean all
+
+# uv — fast Python package manager (used by setup.sh for dev tools)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # ---------------------------------------------------------------------------
 # Docker-compatible symlinks — Hermes terminal backend and other tools
