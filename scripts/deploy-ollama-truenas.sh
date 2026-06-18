@@ -2,6 +2,11 @@
 # TrueNAS SCALE — Ollama LLM Deployment with Intel Arc GPU
 # Run this script on TrueNAS as the 'assistant' user (has sudo)
 #
+# IMPORTANT: TrueNAS SCALE requires UID/GID 568 (apps user) for all
+# containerized services. This is the same pattern used by every stack
+# in /mnt/kevbot-store/stacks/ (jellyfin, sonarr, radarr, etc.)
+# Using the wrong UID causes ZFS permission errors on datasets.
+#
 # GPU passthrough uses the same pattern as the Jellyfin stack:
 #   devices: /dev/dri/:/dev/dri/
 #   group_add: 107 (render), 44 (video)
@@ -20,6 +25,11 @@ MODEL="${1:-qwen2.5:7b}"
 CONTAINER_NAME="ollama"
 OLLAMA_PORT="11434"
 DATA_DIR="/mnt/kevbot-store/assistant/ollama-data"
+
+# TrueNAS SCALE uses UID/GID 568 (apps user) for all containerized services
+# This is required for proper file permissions on ZFS datasets
+OLLAMA_UID=568
+OLLAMA_GID=568
 
 # Colors
 RED='\033[0;31m'
@@ -92,8 +102,8 @@ ok "GPU: $(ls /dev/dri/)"
 echo ""
 echo "▶ Data directory..."
 sudo mkdir -p "$DATA_DIR"
-sudo chown assistant:apps "$DATA_DIR"
-ok "$DATA_DIR"
+sudo chown $OLLAMA_UID:$OLLAMA_GID "$DATA_DIR"
+ok "$DATA_DIR (UID=$OLLAMA_UID, GID=$OLLAMA_GID)"
 
 # Step 3: Stop existing
 echo ""
@@ -101,11 +111,13 @@ echo "▶ Deploying..."
 sudo docker stop $CONTAINER_NAME 2>/dev/null && sudo docker rm $CONTAINER_NAME 2>/dev/null
 
 # Step 4: Run Ollama with GPU passthrough (same pattern as Jellyfin)
+# TrueNAS SCALE uses UID/GID 568 (apps user) for all containerized services
 sudo docker run -d \
     --name $CONTAINER_NAME \
     --restart unless-stopped \
     -p $OLLAMA_PORT:$OLLAMA_PORT \
     -v "$DATA_DIR:/root/.ollama" \
+    --user $OLLAMA_UID:$OLLAMA_GID \
     --device /dev/dri/:/dev/dri/ \
     --group-add 107 \
     --group-add 44 \
